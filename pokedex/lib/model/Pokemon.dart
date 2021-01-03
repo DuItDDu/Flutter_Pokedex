@@ -63,7 +63,7 @@ class Pokemon {
         typeColor = Color(0xFFCA8179);
         break;
       case "dark":
-        typeColor = Color(0xFF000000);
+        typeColor = Color(0xFF303943);
         break;
     }
     return typeColor;

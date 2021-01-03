@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:pokedex/model/Pokemon.dart';
 import 'package:pokedex/app/ui/widgets/EmptyWidget.dart';
+import 'package:pokedex/model/PokemonGeneration.dart';
 
 class PokedexPage extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class PokedexPage extends StatefulWidget {
 
 class _PokedexPageState extends State<PokedexPage> {
   final PokemonBloc _bloc = PokemonBloc(PokemonApi());
+  final _pokemonListController = ScrollController();
 
   _PokedexPageState() {
     _bloc.requestPokemonList();
@@ -24,46 +26,201 @@ class _PokedexPageState extends State<PokedexPage> {
         appBar: AppBar(
           title: Text('Flutter Pokedex'),
         ),
-        body: Stack(
-          children: [
-            Container(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (ScrollNotification scrollInfo) {
-                  if (scrollInfo.metrics.pixels ==
-                      scrollInfo.metrics.maxScrollExtent) {
-                    _bloc.requestPokemonList();
-                  }
-                  return false;
-                },
-                child: StreamBuilder(
-                    stream: _bloc.pokemonList,
-                    builder: (context, AsyncSnapshot<List<Pokemon>> snapshot) {
-                      return _createPokemonList(snapshot.data);
-                    }),
-              ),
-            ),
-            StreamBuilder(
-                stream: _bloc.isLoading,
-                builder: (context, AsyncSnapshot<bool> snapshot) {
-                  if (snapshot.hasData) {
-                    if (snapshot.data) {
-                      return Center(
-                        child: CircularProgressIndicator(value: null),
-                      );
-                    } else {
-                      return EmptyWidget();
-                    }
+        body: _createPokedexBody(),
+      drawer: _createPokedexDrawer(),
+    );
+  }
+
+  Widget _createPokedexDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _createPokedexDrawerHeader(),
+          _createPokedexDrawerGenerationList()
+        ],
+      ),
+    );
+  }
+
+  Widget _createPokedexDrawerHeader() {
+    return DrawerHeader(
+        child: Text(
+          "포켓몬 도감",
+          textAlign: TextAlign.start,
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 24.0),
+        ),
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24.0),
+          bottomRight: Radius.circular(24.0)
+        )
+      ),
+    );
+  }
+  Widget _createPokedexDrawerGenerationList() {
+    return StreamBuilder(
+        stream: _bloc.generation,
+        builder: (context, AsyncSnapshot<PokemonGeneration> snapshot) {
+          return Column(
+            children: _bloc.generations.map((e) {
+              bool isSelected = snapshot.hasData ? snapshot.data.number == e.number : false;
+              return _createPokedexDrawerGenerationCard(e, isSelected);
+            }).toList(),
+          );
+        }
+    );
+  }
+
+  Widget _createPokedexDrawerGenerationCard(PokemonGeneration generation, bool isSelected) {
+    return Card(
+      margin: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
+        color: generation.color,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        child: InkWell(
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "${generation.number}세대 ${generation.name}도감",
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                      color: Colors.white,
+                      fontSize: 18.0),
+                ),
+
+                Builder(builder: (context) {
+                  if (isSelected) {
+                    return Icon(Icons.check, color: Colors.white);
                   } else {
                     return EmptyWidget();
                   }
-                })
+                }),
+              ],
+            )
+          ),
+          onTap: () {
+            _bloc.onGenerationClick(generation);
+            Navigator.of(context).pop();
+
+            _pokemonListController.animateTo(_pokemonListController.position.minScrollExtent, duration: Duration(milliseconds: 500), curve: Curves.fastOutSlowIn);
+          },
+        )
+    );
+  }
+
+  Widget _createPokedexBody() {
+    return Stack(
+      children: [
+        Column(
+          children: [
+            _createPokemonGenerationTitle(),
+            Expanded(child: _createPokemonListContainer())
           ],
-        ));
+        ),
+        _createLoadingBuilder()
+      ],
+    );
+  }
+
+  Widget _createPokemonGenerationTitle() {
+    return StreamBuilder(
+      stream: _bloc.generation,
+      builder: (context, AsyncSnapshot<PokemonGeneration> snapshot) {
+        if (snapshot.hasData) {
+          PokemonGeneration generation = snapshot.data;
+          return Container(
+            padding: EdgeInsets.zero,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
+                  margin: EdgeInsets.fromLTRB(4.0, 16.0, 8.0, 16.0),
+                  color: generation.color,
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
+                      child: Text(
+                        "${generation.number}세대 ${generation.name}도감",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 24.0
+                        ),
+                      ),
+                    )
+                ),
+                Text(
+                  "#${generation.start.toString().padLeft(3, '0')} ~ #${generation.end.toString().padLeft(3, '0')}",
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                      color: generation.color,
+                      fontSize: 20.0),
+                )
+              ],
+            )
+          );
+        } else {
+          return EmptyWidget();
+        }
+      },
+    );
+  }
+
+  Widget _createPokemonListContainer() {
+    return Container(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.pixels ==
+              scrollInfo.metrics.maxScrollExtent) {
+            _bloc.requestPokemonList();
+          }
+          return false;
+        },
+        child: StreamBuilder(
+            stream: _bloc.pokemonList,
+            builder: (context, AsyncSnapshot<List<Pokemon>> snapshot) {
+              return _createPokemonList(snapshot.data);
+            }),
+      ),
+    );
+  }
+
+  Widget _createLoadingBuilder() {
+    return StreamBuilder(
+        stream: _bloc.isLoading,
+        builder: (context, AsyncSnapshot<bool> snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data) {
+              return Center(
+                child: CircularProgressIndicator(value: null),
+              );
+            } else {
+              return EmptyWidget();
+            }
+          } else {
+            return EmptyWidget();
+          }
+        });
   }
 
   Widget _createPokemonList(List<Pokemon> pokemonList) {
     if (pokemonList != null) {
       return GridView.builder(
+        controller: _pokemonListController,
         shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
@@ -115,7 +272,7 @@ class _PokedexPageState extends State<PokedexPage> {
           textAlign: TextAlign.start,
           style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.black26,
+              color: Colors.white70,
               fontSize: 18.0),
         ),
       ],
@@ -141,12 +298,11 @@ class _PokedexPageState extends State<PokedexPage> {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.network(
-              pokemon.imageUrl,
-              width: 100,
-              height: 100,
-              alignment: Alignment.bottomLeft,
-            ),
+            FadeInImage(
+                width: 100,
+                height: 100,
+                placeholder: AssetImage('assets/pokemon_placeholder.png'),
+                image: NetworkImage(pokemon.imageUrl))
           ],
         )
       ],
@@ -183,3 +339,4 @@ class _PokedexPageState extends State<PokedexPage> {
     );
   }
 }
+
