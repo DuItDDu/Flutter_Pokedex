@@ -11,24 +11,36 @@ class PokemonApi {
   Future<List<Pokemon>> getPokemonList(int offset, int limit) async {
     List<Pokemon> pokemonList = [];
 
-    Map<String, String> params = {'offset': offset.toString(), 'limit': limit.toString()};
+    Map<String, String> params = {
+      'offset': offset.toString(),
+      'limit': limit.toString()
+    };
     Uri uri = Uri.https(_baseUrl, '/api/v2/pokemon', params);
 
-    await _client.get(uri)
-        .then((res) {
-          return jsonDecode(res.body);
-        })
-        .then((json) {
-          dynamic results = json["results"];
+    await _client.get(uri).then((res) {
+      return jsonDecode(res.body);
+    }).then((json) async {
+      dynamic results = json["results"];
 
-          if (results is List) {
-            for(var i = 0; i < results.length; i++) {
-              Pokemon pokemon = Pokemon.fromJson(results[i]);
-              pokemon.setImageUrl(i+1);
-              pokemonList.add(pokemon);
-            }
+      if (results is List) {
+        for (var i = 0; i < results.length; i++) {
+          String url = results[i]['url'];
+          Pokemon pokemon = await getPokemon(url);
+          if (pokemon != null) {
+            pokemonList.add(pokemon);
           }
-        });
+        }
+      }
+    });
+
     return pokemonList;
+  }
+
+  Future<Pokemon> getPokemon(String url) async {
+    return await _client.get(Uri.parse(url)).then((res) {
+      return jsonDecode(res.body);
+    }).then((json) {
+      return Pokemon.fromJson(json);
+    });
   }
 }
