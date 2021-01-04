@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pokedex/api/pokemon_api.dart';
+import 'package:pokedex/app/pokedex/detail/pokedex_detail.dart';
 import 'package:pokedex/bloc/pokemon_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -238,18 +239,27 @@ class _PokedexPageState extends State<PokedexPage> {
     return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
-        child: Container(
-          color: pokemon.getTypeColor(),
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _createPokemonHeaderRow(pokemon),
-              _createPokemonTypeRow(pokemon.types),
-              _createPokemonImageRow(pokemon)
-            ],
+        child: InkWell(
+          child: Container(
+            color: pokemon.getTypeColor(),
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _createPokemonHeaderRow(pokemon),
+                _createPokemonTypeRow(pokemon.types),
+                _createPokemonImageRow(pokemon)
+              ],
+            ),
           ),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PokedexDetailPage(pokemon: pokemon)
+                )
+            );
+          },
         )
     );
   }
