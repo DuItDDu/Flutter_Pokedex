@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pokedex/app/pokedex/pokedex.dart';
+import 'package:pokedex/app/splash/splash.dart';
 
 void main() {
   runApp(PokedexApp());
@@ -15,7 +16,7 @@ class PokedexApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: PokedexPage(),
+      home: SplashPage(),
     );
   }
 }
