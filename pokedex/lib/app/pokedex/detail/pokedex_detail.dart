@@ -7,28 +7,56 @@ import 'package:pokedex/model/Pokemon.dart';
 
 class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTickerProviderStateMixin {
   final Pokemon _pokemon;
-  TabController _tabController;
-
-  List<String> _tabs;
-
+  Color _pokemonColor;
   _PokedexDetailPageState(this._pokemon);
 
   @override
   void initState() {
     super.initState();
-    _tabs = ["About", "Abilities", "Stats", "Games"];
-    _tabController = new TabController(length: _tabs.length, vsync: this);
+    _pokemonColor = _pokemon.getPrimaryColor();
   }
 
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
-      appBar: AppBar(),
-      body: Container(
-        color: _pokemon.getTypeColor(),
-        padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 0.0),
-        child: _createPokedexDetailBody(_pokemon),
+      appBar: _createPokedexDetailAppBar(_pokemon),
+      body: SafeArea(
+        child: Container(
+          color: _pokemonColor,
+          padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 0.0),
+          child: _createPokedexDetailBody(_pokemon),
+        ),
+      )
+    );
+  }
+
+  Widget _createPokedexDetailAppBar(Pokemon pokemon) {
+    return AppBar(
+      backgroundColor: _pokemonColor,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            _pokemon.name,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 24.0),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            "#${_pokemon.id.toString().padLeft(3, "0")}",
+            textAlign: TextAlign.start,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 20.0),
+          ),
+        ],
       ),
     );
   }
@@ -47,44 +75,8 @@ class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTicker
   Widget _createPokedexDetailHeader(Pokemon pokemon) {
     return Column(
       children: [
-        _createPokedexDetailLabel(pokemon),
         _createPokemonImageRow(pokemon),
       ],
-    );
-  }
-
-  Widget _createPokedexDetailLabel(Pokemon pokemon) {
-    return Card(
-        margin: EdgeInsets.only(bottom: 16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
-        child: Container(
-            padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  "#${pokemon.id.toString().padLeft(3, "0")}",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: pokemon.getTypeColor(),
-                      fontSize: 24.0),
-                ),
-                Container(width: 16.0,),
-                Text(
-                  pokemon.name,
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: pokemon.getTypeColor(),
-                      fontSize: 24.0),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            )
-        )
     );
   }
 
@@ -138,53 +130,183 @@ class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTicker
         ),
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: Colors.white,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _createPokemonDetailInfoTabBar(),
-                    _createPokemonDetailInfo(pokemon)
-                  ],
-                )
-            )
-          ],
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _createPokemonTypeRow(pokemon),
+                      _createPokemonSizeRow(pokemon),
+                      _createPokemonStatsRow(pokemon.stats),
+                    ],
+                  )
+              )
+            ],
+          ),
         )
     );
   }
 
-  Widget _createPokemonDetailInfoTabBar() {
+  Widget _createPokemonTypeRow(Pokemon pokemon) {
     return Container(
-      padding: EdgeInsets.only(bottom: 8.0),
-      decoration: BoxDecoration(color: Colors.white70),
-      child: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.black,
-          indicatorSize: TabBarIndicatorSize.label,
-          tabs: _tabs
-              .map(
-                (tab) => Tab(
-                  child: Text(
-                    tab,
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 14.0
-                    ),
-                  ),
-                ),
-              )
-              .toList()
+      padding: EdgeInsets.only(top: 8.0, bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: pokemon.types.map((type) =>
+            _createPokemonTypeCard(type)
+        ).toList()
       ),
     );
   }
 
-  Widget _createPokemonDetailInfo(Pokemon pokemon) {
-    return Container(
+  Widget _createPokemonTypeCard(PokemonType type) {
+    return Card(
+        margin: EdgeInsets.only(left: 8.0, right: 8.0),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20.0))
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        color: type.getTypeColor(),
+        child: Container(
+          padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 4.0, bottom: 4.0),
+          child: Text(
+            type.name,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18.0,
+              color: Colors.white
+            ),
+          ),
+        )
+    );
+  }
 
+  Widget _createPokemonSizeRow(Pokemon pokemon) {
+    return Container(
+      padding: EdgeInsets.only(top: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _createPokemonSizeCard("Weight", pokemon.weight.toDouble(), "KG"),
+          _createPokemonSizeCard("Height", pokemon.height.toDouble(), "M")
+        ],
+      ),
+    );
+  }
+
+  Widget _createPokemonSizeCard(String name, double size, String unit) {
+    return Container(
+      padding: EdgeInsets.only(left: 16.0, right: 16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            "$size $unit",
+            style: TextStyle(
+                fontSize: 20.0,
+                color: Colors.black87,
+                fontWeight: FontWeight.bold
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.only(top: 4.0),
+            child: Text(
+              name,
+              style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.black54
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _createPokemonStatsRow(List<PokemonStat> stats) {
+    if (stats == null) {
+      return EmptyWidget();
+    } else {
+      List<Widget> widgets = [Container(
+        padding: EdgeInsets.only(top: 8.0, bottom: 8.0),
+        child: Text(
+          "Pokemon Stats",
+          style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.black87
+          ),
+        ),
+      )
+      ];
+
+      stats.forEach((stat) {
+        String name = stat.convertName();
+        if (name.isNotEmpty) {
+          widgets.add(_createPokemonStatRow(name, stat.baseStat, 150));
+        }
+      });
+
+      return Container(
+        padding: EdgeInsets.only(top: 16.0),
+        child: Column(
+            children: widgets
+        ),
+      );
+    }
+  }
+
+  Widget _createPokemonStatRow(String statName, int value, int maxValue) {
+    return Container(
+      padding: EdgeInsets.only(top: 4.0, bottom: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+            statName,
+            style: TextStyle(
+              fontSize: 18.0,
+              color: Colors.black54,
+            ),
+          ),
+          ),
+          Expanded(
+              flex: 1,
+              child: Container(
+                padding: EdgeInsets.only(left: 4.0),
+                child: Text(
+                  value.toString(),
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+          ),
+          Expanded(
+              flex: 6,
+              child: Container(
+                  padding: EdgeInsets.only(left: 4.0),
+                  child: LinearProgressIndicator(
+                    value: value.toDouble()/maxValue.toDouble(),
+                    backgroundColor: Colors.black12,
+                    valueColor: AlwaysStoppedAnimation<Color>(_pokemonColor),
+                  )
+              )
+          )
+        ],
+      ),
     );
   }
 }

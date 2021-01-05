@@ -241,7 +241,7 @@ class _PokedexPageState extends State<PokedexPage> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           child: Container(
-            color: pokemon.getTypeColor(),
+            color: pokemon.getPrimaryColor(),
             padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
