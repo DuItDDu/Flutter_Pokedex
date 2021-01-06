@@ -1,19 +1,36 @@
 
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:pokedex/app/ui/widgets/EmptyWidget.dart';
 import 'package:pokedex/model/Pokemon.dart';
 
-class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTickerProviderStateMixin {
+class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final Pokemon _pokemon;
   Color _pokemonColor;
+
+  AudioCache _audioPlayer = AudioCache();
+  AudioPlayer _player = AudioPlayer();
+  WidgetsBinding _binding = WidgetsBinding.instance;
+
   _PokedexDetailPageState(this._pokemon);
 
   @override
   void initState() {
     super.initState();
     _pokemonColor = _pokemon.getPrimaryColor();
+    AudioPlayer.logEnabled = false;
+    _playAudio();
+    _binding.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _stopAudio();
+    _binding.removeObserver(this);
   }
 
   @override
@@ -30,6 +47,29 @@ class _PokedexDetailPageState extends State<PokedexDetailPage> with SingleTicker
       )
     );
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch(state) {
+      case AppLifecycleState.resumed:
+        _playAudio();
+        break;
+      case AppLifecycleState.inactive:
+        _stopAudio();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _playAudio() async {
+    _player = await _audioPlayer.loop("pokedex_detail.mp3");
+  }
+
+  void _stopAudio() {
+    _player?.stop();
+  }
+
 
   Widget _createPokedexDetailAppBar(Pokemon pokemon) {
     return AppBar(

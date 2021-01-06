@@ -1,3 +1,5 @@
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:pokedex/api/pokemon_api.dart';
 import 'package:pokedex/app/pokedex/detail/pokedex_detail.dart';
@@ -13,12 +15,31 @@ class PokedexPage extends StatefulWidget {
   _PokedexPageState createState() => _PokedexPageState();
 }
 
-class _PokedexPageState extends State<PokedexPage> {
+class _PokedexPageState extends State<PokedexPage> with WidgetsBindingObserver {
   final PokemonBloc _bloc = PokemonBloc(PokemonApi());
   final _pokemonListController = ScrollController();
 
+  AudioCache _audioPlayer = AudioCache();
+  AudioPlayer _player = AudioPlayer();
+  WidgetsBinding _binding = WidgetsBinding.instance;
+
   _PokedexPageState() {
     _bloc.requestPokemonList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    AudioPlayer.logEnabled = false;
+    _playAudio();
+    _binding.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _stopAudio();
+    _binding.removeObserver(this);
   }
 
   @override
@@ -30,6 +51,28 @@ class _PokedexPageState extends State<PokedexPage> {
         body: _createPokedexBody(),
       drawer: _createPokedexDrawer(),
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch(state) {
+      case AppLifecycleState.resumed:
+        _playAudio();
+        break;
+      case AppLifecycleState.inactive:
+        _stopAudio();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _playAudio() async {
+    _player = await _audioPlayer.loop("pokedex.mp3");
+  }
+
+  void _stopAudio() {
+    _player?.stop();
   }
 
   Widget _createPokedexDrawer() {
@@ -254,11 +297,14 @@ class _PokedexPageState extends State<PokedexPage> {
             ),
           ),
           onTap: () {
+            _stopAudio();
             Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => PokedexDetailPage(pokemon: pokemon)
                 )
-            );
+            ).then((value) => {
+              _playAudio()
+            });
           },
         )
     );
@@ -283,7 +329,7 @@ class _PokedexPageState extends State<PokedexPage> {
           style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.white70,
-              fontSize: 18.0),
+              fontSize: 16.0),
         ),
       ],
     );

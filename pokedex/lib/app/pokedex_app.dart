@@ -11,6 +11,8 @@ class PokedexApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      showSemanticsDebugger: false,
       title: 'Flutter Pokedex',
       theme: ThemeData(
         primarySwatch: Colors.blue,
